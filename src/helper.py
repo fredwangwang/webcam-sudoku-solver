@@ -2,12 +2,16 @@
 
 import numpy as np
 import cv2
-import json
 
-_sudoku_control_points = np.array([[[000, 000, 0]],
-                                   [[100, 000, 0]],
-                                   [[100, 100, 0]],
-                                   [[000, 100, 0]]])
+_sudokuCtrPts3D = np.array([[[000, 000, 0]],
+                            [[400, 000, 0]],
+                            [[400, 400, 0]],
+                            [[000, 400, 0]]])
+
+_sudokuCtrPts2D = np.array([[[0, 0]],
+                            [[400, 0]],
+                            [[400, 400]],
+                            [[0, 400]]])
 
 
 def simplifyContour(contour, eps=0.1):
@@ -49,6 +53,10 @@ def findVerticesCW(contour):
         ]
     ]
     '''
+
+    # TODO: refactor required.
+    # The contour returned is guareeteed to be CCW, take advantage of that
+
     min_x = min_y = 999999
     max_x = max_y = 0
     for pt in contour:
@@ -74,7 +82,7 @@ def findVerticesCW(contour):
     br = np.array([max_x, max_y])
     bbox = (tl, tr, br, bl)
 
-    result = np.ndarray(shape=(4, 1, 2), dtype=np.ndarray)
+    result = np.ndarray(shape=(4, 1, 2), dtype="int")
     for i in range(len(bbox)):
         ctr_pt = bbox[i]
         min_dist = 9999999
@@ -84,12 +92,36 @@ def findVerticesCW(contour):
                 result[i] = pt
                 min_dist = dist
     return result
-'''
-// Check the "circularity" ratio of the outer region, which is
-		// the ratio of area to perimeter squared: R = 4*pi*A/P^2.
-		// R is 1 for a circle, and pi/4 for a square.
-		double P1 = arcLength(contours[i1], true);
-		double A1 = contourArea(contours[i1]);
-		if (4 * 3.1415 * A1 / (P1 * P1) < 3.1415 / 4)
-			// Let's say that we want our region to be at least as round as a square.
-			continue;'''
+
+def getOrthophoto(img, bbox, ctrPts, trans="projective"):
+    '''Given the image and coordinate pairs, return the orthophoto and transform
+
+    getOrthophoto(img, bbox, ctrPts, trans) -> orthophoto, trans
+    '''
+    trans = cv2.getPerspectiveTransform(bbox.astype(np.float32), ctrPts.astype(np.float32))
+    return cv2.warpPerspective(img, trans, (400,400)), trans
+    # affine = cv2.getAffineTransform(bbox[1:].astype(np.float32), ctrPts[1:].astype(np.float32))
+    # return cv2.warpAffine(img, affine, (400,400))
+
+
+def filterSmallContours(contours, area, thresh=0.1):
+    '''Given a list of contours, filter out the contours that is smaller than
+    area*thresh. Return the qulified contours
+
+    filterSmallContours(contours, area, thresh) -> contours
+    '''
+    return [x for x in contours if cv2.contourArea(x) > area * thresh]
+
+
+def filterNonQuadrilateral(contours, esp=0.1):
+    '''Given a list of contours, filter out the contours that is no like a 
+    quadrilateral shape. The returned contours are simplified.
+
+    filterNonQuadrilateral(contours, esp) -> contours
+    '''
+    result = []
+    for cnt in contours:
+        ret, contour = isQuadrilateral(cnt, esp)
+        if ret:
+            result.append(contour)
+    return result
