@@ -3,15 +3,16 @@
 import numpy as np
 import cv2
 
-_sudokuCtrPts3D = np.array([[[000, 000, 0]],
-                            [[400, 000, 0]],
-                            [[400, 400, 0]],
-                            [[000, 400, 0]]])
+side_length = 400
 
-_sudokuCtrPts2D = np.array([[[0, 0]],
-                            [[400, 0]],
-                            [[400, 400]],
-                            [[0, 400]]])
+# __sudoku_ctrl_pts3D = np.array([[[000, 000, 0]],
+#                                 [[400, 000, 0]],
+#                                 [[400, 400, 0]],
+#                                 [[000, 400, 0]]])
+__sudoku_ctrl_pts2D = np.array([[[0, 0]],
+                                [[side_length, 0]],
+                                [[side_length, side_length]],
+                                [[0, side_length]]])
 
 
 def simplifyContour(contour, eps=0.1):
@@ -93,15 +94,15 @@ def findVerticesCW(contour):
                 min_dist = dist
     return result
 
-def getOrthophoto(img, bbox, ctrPts, trans="projective"):
+
+def getOrthophoto(img, bbox, ctrl_pts, trans="projective"):
     '''Given the image and coordinate pairs, return the orthophoto and transform
 
     getOrthophoto(img, bbox, ctrPts, trans) -> orthophoto, trans
     '''
-    trans = cv2.getPerspectiveTransform(bbox.astype(np.float32), ctrPts.astype(np.float32))
-    return cv2.warpPerspective(img, trans, (400,400)), trans
-    # affine = cv2.getAffineTransform(bbox[1:].astype(np.float32), ctrPts[1:].astype(np.float32))
-    # return cv2.warpAffine(img, affine, (400,400))
+    trans = cv2.getPerspectiveTransform(
+        bbox.astype(np.float32), ctrl_pts.astype(np.float32))
+    return cv2.warpPerspective(img, trans, (400, 400)), trans
 
 
 def filterSmallContours(contours, area, thresh=0.1):
@@ -125,3 +126,51 @@ def filterNonQuadrilateral(contours, esp=0.1):
         if ret:
             result.append(contour)
     return result
+
+kernel = np.ones((2,2),np.uint8)
+def get_cells(img_bw):
+    '''Given the orthophoto, return the grid of images for recognition
+    If not sufficient cells found, return None, None
+
+    get_cells(img_BW) -> img_cells, positions
+    '''
+    
+    # img_bw = cv2.dilate(img_bw,kernel,iterations = 1)
+    # TODO: check!
+    _, contours, hierarchy = cv2.findContours(
+        img_bw, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+    contours = filterSmallContours(contours, 400 * 400, 0.01)
+    # contours = filterNonQuadrilateral(contours, 0.05)
+
+    # cv2.drawContours(img_bw,contours, -1 , (0,255,0),4)
+    cv2.imshow('orth_bw', img_bw)
+
+    if len(contours) != 81:
+        print len(contours)
+        return None, None
+
+    parts_img = []
+    parts_pos = []
+    for cnt in contours:
+        # get the part of the imgs
+        # img[y:y+h, x: x+w]
+        # 0    1
+        # 3    2
+        cnt = findVerticesCW(cnt)
+        M = cv2.moments(cnt)
+        cx = int(M['m10'] / M['m00'])
+        cy = int(M['m01'] / M['m00'])
+        part = img_bw[cnt[0][0][1]: cnt[2][0][1], cnt[0][0][0]: cnt[2][0][0]]
+        part = cv2.bitwise_not(part)
+        parts_img.append(part)
+        parts_pos.append((cx, cy))
+
+    # the return ed contour starts at the right bottom corner
+    # parts.reverse()
+    imgs = [[None for i in range(9)] for i in range(9)]
+    poss = [[None for i in range(9)] for i in range(9)]
+    for i in range(9):
+        for j in range(9):
+            imgs[i][j] = parts_img[80 - (i * 9 + j)]
+    return imgs
