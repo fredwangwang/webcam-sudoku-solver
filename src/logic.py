@@ -56,11 +56,11 @@ model_points = np.array([
     [(-225.0, 170.0, -135.0)],     # Left eye left corner
     [(225.0, 170.0, -135.0)]
 ], dtype="double")
-
+n
 print np.shape(_sudoku_control_points)
 print np.shape(model_points)
 print np.shape(contour)
-print np.shape(image_points)
+print np.shape(image_poits)
 
 success, rvec, tvec = cv2.solvePnP(
     _sudoku_control_points, contour.astype(float), camera_matrix, dist_coeffs)
