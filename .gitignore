@@ -107,3 +107,7 @@ ENV/
 *.png
 *.img
 *.bmp
+*.jpg
+
+# data
+*.gz
