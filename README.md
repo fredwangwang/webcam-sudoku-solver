@@ -24,14 +24,18 @@ python main.py
 ```
 
 ## How does it work
-First thing is of course get the video buffer from the camera, like this:
+First thing is of course get the video buffer from the camera, like this: 
+
 ![raw](./picture/raw.jpg)
 
-Then extract the contours, try to find a sudoku board. If a qualified square contour is found, project it as an orthophoto, and do some pre-processing to it.
+Then extract the contours, try to find a sudoku board. If a qualified square contour is found, project it as an orthophoto, and do some pre-processing to it. 
+
 ![ortho_bw](./picture/ortho_bw.png)
 
 After successfully extract the board, run Hough line transformation on it. If everything goes right, effectively each cell is determined. Then we can do the digit recognition on each cell. Empty cells are denoted as 0. 
+
 ![ortho_raw](./picture/ortho_raw.png)
 
-Once we have a grid of digits, we can use the solver to solve it! In this project, a [Z3](https://github.com/Z3Prover/z3) solver is used. Basically model the problem as a CSP, then Z3 can give the arrangment efficiently. Which bring us to the final result:
+Once we have a grid of digits, we can use the solver to solve it! In this project, a [Z3](https://github.com/Z3Prover/z3) solver is used. Basically model the problem as a CSP, then Z3 can give the arrangment efficiently. Which bring us to the final result: 
+
 ![result](./picture/projected_raw.png)
