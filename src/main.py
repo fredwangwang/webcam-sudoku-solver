@@ -51,9 +51,10 @@ while(True):
 
         # debug
         cells_digit = [[None for _ in range(9)] for _ in range(9)]
+        cells_digit = recognize_grid(cells)
         for i in range(9):
             for j in range(9):
-                cells_digit[i][j] = recognize(cells[i][j])
+                # cells_digit[i][j] = recognize(cells[i][j])
                 cv2.putText(ortho_raw, str(cells_digit[i][j]),
                             positions[i][j], font, 0.3, (0, 255, 0), 1)
 
