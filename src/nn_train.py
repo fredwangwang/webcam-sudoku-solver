@@ -12,7 +12,7 @@ def train():
     net.fit(training, validating)
     net.save(nn_params.MODEL_FILE)  
 
-print os.path.join(os.curdir, 'models', nn_params.MODEL_FILE)
+print (os.path.join(os.curdir, 'models', nn_params.MODEL_FILE))
 if os.path.exists(os.path.join(os.curdir, 'models', nn_params.MODEL_FILE)):
     response = raw_input('pre-trained model exist, retrain? [y/N] ').strip().lower()
     if response.find('y') != -1:
@@ -32,6 +32,6 @@ for test_case in testing:
         correct += 1
     counter += 1
 
-print 'Correct rate:', float(correct)/ counter * 100
+print ('Correct rate:', float(correct)/ counter * 100)
 
 
